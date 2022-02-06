@@ -1,10 +1,10 @@
-### MODELO DE REGRESS√O LOGÕSTICA MULTINOMIAL PARA A DISSERTA«√O DE MESTRADO
+### MODELO DE REGRESS√ÉO LOG√çSTICA MULTINOMIAL PARA A DISSERTA√á√ÉO DE MESTRADO
 
 dev.off(dev.list()["RStudioGD"])
 rm(list=ls())
 cat("\f")
 
-setwd("D:/15.1 Mestrado/1.0 - DissertaÁ„o de mestrado/2. python_mestrado")     # diretÛrio onde est· arquivo
+setwd("D:/15.1 Mestrado/1.0 - Disserta√ß√£o de mestrado/2. python_mestrado")     # diret√≥rio onde est√° arquivo
 
 library(readxl)
 data <- read_excel("base_regressao_logistica3.xlsx")
@@ -21,9 +21,9 @@ ano <- c("anoum", "anodois", "anotres", "anoquatro", "anocinco", "anoseis")
 ano_cod <- as.numeric(factor(data$Ano, levels = ano))
 
 mes <- c("janeiro","fevereiro","marco","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro")
-mes_cod <- as.numeric(factor(data$MÍs, levels = mes))
+mes_cod <- as.numeric(factor(data$M√™s, levels = mes))
 
-comarca_cod <- as.numeric(factor(data$Comarca))   # quando n„o coloca condiÁ„o, vai por ordem alfabÈtica
+comarca_cod <- as.numeric(factor(data$Comarca))   # quando n√£o coloca condi√ß√£o, vai por ordem alfab√©tica
 
 uf <- c("ap","to","rr","al","ac","pa","se","ms","pi","ma","rn","ce","pb","am","es","sc","go","rs","pe","mt","df","ro","pr","mg","ba","rj","sp")
 uf_cod <- as.numeric(factor(data$UF))
@@ -43,7 +43,7 @@ library(fastDummies)
 
 data_dummies <- dummy_cols(data,
                            select_columns = c("MOTIVO PROCESSO", "CAUSA_PROCESSO"))     # transforma essas colunas em dummies
-data_dummies <- data_dummies[, -c(1,2,3,4,5,6,7,8,9,10)]    # deixa data_dummies sÛ com as dummies: todas as linhas e exclui as 10 primeiras colunas, que n„o s„o dummies
+data_dummies <- data_dummies[, -c(1,2,3,4,5,6,7,8,9,10)]    # deixa data_dummies s√≥ com as dummies: todas as linhas e exclui as 10 primeiras colunas, que n√£o s√£o dummies
 str(data_dummies)
 #data_dummies$`MOTIVO PROCESSO_overbooking` <- NULL # excluir porque causa multicolinearidade (quando rodo no STATA fala isso)
 #data_dummies$CAUSA_PROCESSO_covid <- NULL # excluir porque causa multicolinearidade (quando rodo no STATA fala isso)
@@ -67,12 +67,12 @@ str(data_cod)
 #install.packages("nnet")
 library(nnet)
 
-data_cod$valor_cod <- relevel(data_cod$valor_cod, ref = "1")        # valor de referÍncia È o da classe 1: baixo
+data_cod$valor_cod <- relevel(data_cod$valor_cod, ref = "1")        # valor de refer√™ncia √© o da classe 1: baixo
 data$Ano <- as.factor(data$Ano)
-mymodel <- multinom(valor_cod ~., data = data_cod)               # valor_cod ~. : valor_cod È a dependente e ~. significa que todas as coutras colunass s„o as independtens
-summary(mymodel)      # mostra os coeficientes para os dados de treino. Esses coeficientes s„o os logaritmos das razıes de chances
+mymodel <- multinom(valor_cod ~., data = data_cod)               # valor_cod ~. : valor_cod √© a dependente e ~. significa que todas as coutras colunass s√£o as independtens
+summary(mymodel)      # mostra os coeficientes para os dados de treino. Esses coeficientes s√£o os logaritmos das raz√µes de chances
 
-razao_de_chance <- exp(summary(mymodel)$coefficients)                  # esse mostra as razıes de chances, ou seja, quanto maior de chance uma classe pode acontecer em relaÁ„o · classe de referÍncia
+razao_de_chance <- exp(summary(mymodel)$coefficients)                  # esse mostra as raz√µes de chances, ou seja, quanto maior de chance uma classe pode acontecer em rela√ß√£o √° classe de refer√™ncia
 
 
 mymodel_oim <- multinom(valor_cod ~ 1, data = data_cod) # modelo sem regressores, so com interceto (only intercept model)
@@ -84,19 +84,19 @@ p <- (1 - pnorm(abs(z), 0, 1))*2                                                
 
 ### Confusion matriX and misclassification error training dataset
 
-pred <- predict(mymodel, data_cod)       # prediÁıes para os dados de treino
+pred <- predict(mymodel, data_cod)       # predi√ß√µes para os dados de treino
 tab <- table(pred, data_cod$valor_cod)   # confusion matrix for training data set
 
-accuracy <- sum(diag(tab)/sum(tab)) # acur·cia
+accuracy <- sum(diag(tab)/sum(tab)) # acur√°cia
 misclassif <- 1 - accuracy          # missclassification error
 
 ### Predicition and model assessment
 n <- table(data_cod$valor_cod)
 freq_classes <- n/sum(n)                                      # frequency of classes
 
-tab/colSums(tab)                              # acur·cia para cada classe
+tab/colSums(tab)                              # acur√°cia para cada classe
 
-anova(mymodel_oim, mymodel)                   # comparar modelo sÛ com intercepto e modelo completo
+anova(mymodel_oim, mymodel)                   # comparar modelo s√≥ com intercepto e modelo completo
 # p-value <5% indica que o modelo como um todo se adequa significativamente melhor do que o modelo so com intercepto
 
 
@@ -106,15 +106,12 @@ pred_proba <- head(mymodel$fitted.values, 30)
 #predicted result for each class
 predicted <- head(predict(mymodel),30)
 # test the goodness of fit
-quiqua <- chisq.test(data_cod$valor_cod, predict(mymodel))      # associaÁ„o entre vari·veis categÛricas
-# H0: n„o h· associaÁ„o entre as vari·veis preditoras e a dependente
-# H1: h· associaÁ„o entre as vari·veis preditoras e a dependente
-# p < 5%: rejeita H0, ou seja, h· associaÁ„o entre as vari·veis
+quiqua <- chisq.test(data_cod$valor_cod, predict(mymodel))      
 
-#frequÍncias esperadas: pressuposto: frequencias esperadas >5 
+#frequ√™ncias esperadas: pressuposto: frequencias esperadas >5 
 quiqua$expected
 
-# residual padroizado ajkistado: > 1,96 ou < -1,96. Se estiver nessas regiıes, os residuos s„o estaticamente significante
+# residual padroizado ajkistado: > 1,96 ou < -1,96. Se estiver nessas regi√µes, os residuos s√£o estaticamente significante
 quiqua$stdres
 
 
@@ -123,21 +120,4 @@ quiqua$stdres
 library(DescTools)
 PseudoR2(mymodel, which = c("CoxSnell", "Nagelkerke", "McFadden"))
 
-
-### Likelihood Ratio Tests - O teste de LR fala quais prediotres permitem prever a ategoria alvo
-library(lmtest)
-ano_cod_lr <- lrtest(mymodel, "ano_cod")
-mes_cod_lr <- lrtest(mymodel, "mes_cod")
-comarca_cod_lr <- lrtest(mymodel, "comarca_cod")
-uf_cod_lr <- lrtest(mymodel, "uf_cod")
-# ... continuar com outros preditores
-
-
-
-
-
-install.packages("writexl")
-library("writexl")
-
-write_xlsx(data_cod, "D:\\15.1 Mestrado - ATUALIZADO\\1.0 - DissertaÁ„o de mestrado\\2. python_mestrado\\base_regressao_logistica3_R.xlsx")
 
