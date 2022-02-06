@@ -45,9 +45,6 @@ data_dummies <- dummy_cols(data,
                            select_columns = c("MOTIVO PROCESSO", "CAUSA_PROCESSO"))     # transforma essas colunas em dummies
 data_dummies <- data_dummies[, -c(1,2,3,4,5,6,7,8,9,10)]    # deixa data_dummies só com as dummies: todas as linhas e exclui as 10 primeiras colunas, que não são dummies
 str(data_dummies)
-#data_dummies$`MOTIVO PROCESSO_overbooking` <- NULL # excluir porque causa multicolinearidade (quando rodo no STATA fala isso)
-#data_dummies$CAUSA_PROCESSO_covid <- NULL # excluir porque causa multicolinearidade (quando rodo no STATA fala isso)
-#data_dummies$CAUSA_PROCESSO_trafegoaereo <- NULL # excluir porque causa multicolinearidade (quando rodo no STATA fala isso)
 
 ### Juntando colunas codificadas com as dummy
 
