@@ -65,7 +65,7 @@ library(nnet)
 
 data_cod$valor_cod <- relevel(data_cod$valor_cod, ref = "1")        # valor de referência é o da classe 1: baixo
 data$Ano <- as.factor(data$Ano)
-mymodel <- multinom(valor_cod ~., data = data_cod)               # valor_cod ~. : valor_cod é a dependente e ~. significa que todas as coutras colunass são as independtens
+mymodel <- multinom(valor_cod ~., data = data_cod, model = TRUE)               # valor_cod ~. : valor_cod é a dependente e ~. significa que todas as coutras colunass são as independtens
 summary(mymodel)      # mostra os coeficientes para os dados de treino. Esses coeficientes são os logaritmos das razões de chances
 
 razao_de_chance <- exp(summary(mymodel)$coefficients)                  # esse mostra as razões de chances, ou seja, quanto maior de chance uma classe pode acontecer em relação á classe de referência
