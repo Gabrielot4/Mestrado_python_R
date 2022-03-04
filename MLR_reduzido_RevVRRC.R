@@ -54,6 +54,8 @@ summary(mymodel)      # mostra os coeficientes para os dados de treino. Esses co
 
 odds_ratio <- exp(summary(mymodel)$coefficients)  # razão de chances dos coeficientes estimandos: exp(ln(Betas))
 
+odds_ratio
+
 # mymodel_oi: modelo só com intercepto
 mymodel_oi <- multinom(Valor_pago_red ~1, data=data)
 summary(mymodel_oi)
@@ -62,6 +64,8 @@ summary(mymodel_oi)
 ### 2-tailed z-test
 z <- summary(mymodel)$coefficients/summary(mymodel)$standard.errors
 p <- (1 - pnorm(abs(z), 0, 1))*2  
+
+p
 
 ### Predicted probabilities 
 head(pp.values <- mymodel$fitted.values) # Probabilidade de prever baix ou medio ou alto, em número, para cada linha do dataframe
@@ -78,7 +82,7 @@ acc <- sum(diag(conf_m))/sum(conf_m)
 acc
 
 ### ROC Curve
-install.packages("pROC")
+#install.packages("pROC")
 library(pROC)
 multiclass.roc(data$Valor_pago_red, mymodel$fitted.values)
 
@@ -98,7 +102,7 @@ chi2 # p-value < 0,01: rejeita H0
 
 
 ### Outra forma do Goodness of fit, mais fácil de compreender o resultado
-install.packages("lsr")
+#install.packages("lsr")
 library(lsr)
 
 goodnessOfFitTest(pp.outcome, p = c(baixo=.3364, medio=.3438, alto=.3198)) # goodnessOfFitTest(observado, esperado) | os valores esperados são as proporções das categorias presentes na base de dados original
@@ -113,6 +117,7 @@ goodnessOfFitTest(pp.outcome, p = c(baixo=.3364, medio=.3438, alto=.3198)) # goo
 ### Log Likelihood ratio test
 ### Analisar quais preditores permitem prever a categoria de resposta, ou seja, se os regressores fazem diferença no modelo
 ### HO: coeficiente Beta da variável x1 é zerp
+#install.packages('lmtest')
 library(lmtest)
 lrtest(mymodel, mymodel_oi) # comparação entre modelo completo e só com intercepto. p<alpha rejeita H0,ou seja, os preditores são importantes no modelo
 
@@ -131,6 +136,7 @@ library(DescTools)
 PseudoR2(mymodel, which = c("CoxSnell", "Nagelkerke", "McFadden"))
 
 ### CrossValidation with caret
+#install.packages('caret')
 library(caret)
 fit.control <- trainControl(method = 'repeatedcv', number = 5, repeats = 10)
 fit <- train(Valor_pago_red ~., data=data, method = "multinom", trControl = fit.control, trace=FALSE)
