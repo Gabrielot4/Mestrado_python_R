@@ -5,7 +5,7 @@ import string
 
 inicio = time.time()                    # começa a contar o tempo de processamento
 
-data = pd.read_excel('Consolidado_Geral_Modif3.xlsx', sheet_name='c_valor_s_orgao2', index_col=None)
+data = pd.read_excel('base_reduzido_AM.xlsx', sheet_name='Sheet1', index_col=None)
 data = pd.DataFrame(data)
 print('\n \033[1;30;43m Visualização do DatFrame: \033[m \n ', data.head())
 print('\n \033[1;30;43m Tipos de dados do DatFrame: \033[m \n ',data.dtypes)
@@ -31,22 +31,22 @@ print('\n \033[1;30;43m DatFrame embaralhado: \033[m \n ',data.head())
 print('\n \033[1;30;43m Dados Ausentes: \033[m \n')
 print(data.isnull().sum(),'\n')
 
-# comarcas com baixa frequência (< 100) retiradas do dataset
+"""# comarcas com baixa frequência (< 100) retiradas do dataset
 print('\n \033[1;30;43m Frequência Comarca: \033[m \n')
 print(data['Comarca'].value_counts())
 mask = data['Comarca'].value_counts().head(133).index                                                                               # mask fica com os 133 valores da coluna Comarcas com maior frequência (> 100)
 data = data.loc[data['Comarca'].isin(mask)]                                                                                         # datafram fica com todos os 134 valores que mais aparecem
 print('\n \033[1;30;43m 134 maiores frequências Comarca: \033[m \n')
 print(data['Comarca'].value_counts())
-print(data.shape)
+print(data.shape)"""
 
 # exportar para excel a base pré-processada
 #data.to_excel('base_regressao_logistica.xlsx')
 
 
 ## SEPARATE INPUTS AND OUTPUTS
-X = data.drop(['Valor_Pago'], axis='columns')                                                                           # X são os dados dos atributos de entrada (variáveis independentes, features)
-y = data['Valor_Pago']                                                                                                  # y é a o valor alvo  aser predito (classe, variável dependente)
+X = data.drop(['Valor_pago_red'], axis='columns')                                                                           # X são os dados dos atributos de entrada (variáveis independentes, features)
+y = data['Valor_pago_red']                                                                                                  # y é a o valor alvo  aser predito (classe, variável dependente)
 
 
 ## PRÉ-PROCESSAMENTO DOS DADOS - TRANSFORMAR DADOS CATEGÓRICOS PARA NUMÉRICOS
@@ -65,29 +65,55 @@ y = le.transform(y)
 print('\n \033[1;30;44m Class encoded: \033[m \n ', y)
 
 #Parâmetros a serem testados
-c = np.array([0.1,0.5,1,2,3])
+c = np.array([5,3,1,0.1,0.5,1,2,3])  #[0.1,0.5,1,2,3]
 penalty = ['l2']
-loss = ['hinge', 'squared_hinge']
+loss = ['hinge', 'squared_hinge']  #['hinge', 'squared_hinge']
 params_grid = {'C':c, 'loss':loss, 'penalty':penalty}
 
 ## MODEL
 from sklearn import svm
 from sklearn.svm import LinearSVC
+from sklearn.calibration import CalibratedClassifierCV          # essa biblioteca é para calbrar o modelo de linearSVC para ser possível ter o valor da auc roc
 from sklearn.multiclass import OneVsOneClassifier
-
-svm_linearSVC = LinearSVC(max_iter=100000,random_state=42)  #ovo = one vs one: faz uma combinação das classes
-
-# Validação cruzada
 from sklearn.model_selection import StratifiedKFold, cross_val_score, GridSearchCV
+from sklearn.metrics import roc_auc_score, confusion_matrix
 
-gridSVC = GridSearchCV(svm_linearSVC, param_grid=params_grid, cv=5, n_jobs=-1)
+# Uma maneira de conseguir ter predict_proba >>>>> estou usando essa
+
+svm_linearSVC = LinearSVC(max_iter=500000, random_state=42)  #ovo = one vs one: faz uma combinação das classes
+
+gridSVC = GridSearchCV(svm_linearSVC, param_grid=params_grid, scoring='accuracy', cv=5, n_jobs=-1)
 gridSVC.fit(X,y)
+gridSVC_calibrado = CalibratedClassifierCV(gridSVC, ensemble=False)    # utiliza essa função para ter posssibilidade de calcular as predições das probabilidades e, assim, calcular o auc_roc; ensemble=F: utiliza cross validation, semelhante a probability=True no SVM
+gridSVC_calibrado.fit(X,y)
 
-print('C: ', gridSVC.best_estimator_.C)
-print('Loss: ', gridSVC.best_estimator_.loss)
-print('Penalty: ', gridSVC.best_estimator_.penalty)
-print('Acurácia: ', gridSVC.best_score_)
+y_pred = gridSVC_calibrado.predict(X)
+y_proba = gridSVC_calibrado.predict_proba(X)
+accuracy = gridSVC_calibrado.score(X,y)
+auc_roc = roc_auc_score(y, y_proba, multi_class='ovo')
+conf_mat = confusion_matrix(y, y_pred)
 
+print('Penalty:', gridSVC.best_estimator_.penalty)
+print('Loss:', gridSVC.best_estimator_.loss)
+print('C:', gridSVC.best_estimator_.C)
+
+# Outra maneira
+
+"""svm_linearSVC = LinearSVC(max_iter=500000, C=1.0, penalty='l2', loss='hinge', random_state=42)  #ovo = one vs one: faz uma combinação das classes
+svm_linearSVC_calibrado = CalibratedClassifierCV(svm_linearSVC, cv=5)
+svm_linearSVC_calibrado.fit(X,y)
+
+y_pred = svm_linearSVC_calibrado.predict(X)
+y_proba = svm_linearSVC_calibrado.predict_proba(X)
+accuracy = svm_linearSVC_calibrado.score(X, y)
+auc_roc = roc_auc_score(y, y_proba, multi_class='ovo')
+conf_mat = confusion_matrix(y, y_pred)
+"""
+
+
+print('Acurácia: ', accuracy)
+print('AUC_ROC:', auc_roc)
+print('Confusion Matrix:', conf_mat)
 
 fim = time.time()                       # fim do tempo de processamento
 print('\n')

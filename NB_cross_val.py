@@ -6,7 +6,7 @@ import string
 
 inicio = time.time()                    # começa a contar o tempo de processamento
 
-data = pd.read_excel('Consolidado_Geral_Modif3.xlsx', sheet_name='c_valor_s_orgao2', index_col=None)
+data = pd.read_excel('base_reduzido_AM.xlsx', sheet_name='Sheet1', index_col=None)
 data = pd.DataFrame(data)
 print('\n \033[1;30;43m Visualização do DatFrame: \033[m \n ', data.head())
 print('\n \033[1;30;43m Tipos de dados do DatFrame: \033[m \n ',data.dtypes)
@@ -33,7 +33,7 @@ print('\n \033[1;30;43m DatFrame embaralhado: \033[m \n ',data.head())
 print('\n \033[1;30;43m Dados Ausentes: \033[m \n')
 print(data.isnull().sum(),'\n')
 
-# comarcas com baixa frequência (< 100) retiradas do dataset
+"""# comarcas com baixa frequência (< 100) retiradas do dataset
 print('\n \033[1;30;43m Frequência Comarca: \033[m \n')
 print(data['Comarca'].value_counts())
 mask = data['Comarca'].value_counts().head(133).index                                                                               # mask fica com os 134 valores da coluna Comarcas com maior frequência (> 100)
@@ -41,30 +41,31 @@ data = data.loc[data['Comarca'].isin(mask)]                                     
 print('\n \033[1;30;43m 134 maiores frequências Comarca: \033[m \n')
 print(data['Comarca'].value_counts())
 print(data.shape)
+"""
 
 
 ## SEPARATE INPUTS AND OUTPUTS
-X = data.drop('Valor_Pago', axis='columns')
-y = data['Valor_Pago']
+X = data.drop('Valor_pago_red', axis='columns')
+y = data['Valor_pago_red']
 
 
 ## PRÉ-PROCESSAMENTO DOS DADOS - TRANSFORMAR DADOS CATEGÓRICOS PARA NUMÉRICOS
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 
-# Transformando os atritbutos por OneHotEnconder
-ohe = OneHotEncoder(handle_unknown='ignore')                                                                            # esse argumento é colocado para ignorar possíveis categorias que estão no X_train e não estão no X_test. Se no X_test aparece alguma coisa que não tem no X_train, dá erro.
+# Transformando os atritbutos por OneHotEnconder (as novas colunas são em ordem alfabética das categorias)
+ohe = OneHotEncoder(handle_unknown='ignore') #drop='first', para tirar primeira coluna pós one hot encod (não ´bom usar isso quando o modelo tem regularização)           # esse argumento handle_unknown é colocado para ignorar possíveis categorias que estão no X_train e não estão no X_test. Se no X_test aparece alguma coisa que não tem no X_train, dá erro.
 ohe.fit(X)                                                                                                        # transformando os atributos categóricos em atributos numéricos: Ex: Niteroi = 1, Brasilia = 2, ...
 X = ohe.transform(X).toarray()
 print('\n \033[1;30;44m Atributos encoded: \033[m \n ', X)
 
-# Transformando a classe a ser predita por LabelEncoder
+# Transformando a classe a ser predita por LabelEncoder (utilizado para classes, não features)
 le = LabelEncoder()
 le.fit(y)
 y = le.transform(y)
 print('\n \033[1;30;44m Class encoded: \033[m \n ', y)
 
 #Parâmertro alpha
-alphas = np.array([0.1, 0.01, 0.001, 0.0001])
+alphas = np.array([10, 8, 5, 4 , 3 , 2 , 1, 0.1, 0.01, 0.001, 0.0001])
 params = {'alpha': alphas}
 
 ## MODEL
@@ -76,12 +77,23 @@ mnb = MultinomialNB()
 
 # Validação cruzada
 from sklearn.model_selection import StratifiedKFold, cross_val_score, GridSearchCV
+from sklearn.metrics import make_scorer, accuracy_score, roc_auc_score, confusion_matrix
 
-gridMNB = GridSearchCV(cnb, param_grid={'alpha':[1,0.01,0.005, 0.001, 0.0001]}, cv=5, n_jobs=-1)                  # Quanto maior o alpha, mais se aproxima de uma distribuição uniforma
+#scoring = {"Accuracy": make_scorer(accuracy_score)}
+
+gridMNB = GridSearchCV(mnb, param_grid=params, scoring='accuracy', cv=5, n_jobs=-1)                  # Quanto maior o alpha, mais se aproxima de uma distribuição uniforma; refit="Accuracy"
 gridMNB.fit(X, y)
+
+
+y_pred = gridMNB.predict(X)
+y_proba = gridMNB.predict_proba(X)
+auc_roc = roc_auc_score(y, y_proba, multi_class='ovo')
+conf_mat = confusion_matrix(y, y_pred)
 
 print('Alpha: ', gridMNB.best_estimator_.alpha)
 print('Acurácia: ', gridMNB.best_score_)
+print('AUC_ROC', auc_roc)
+print('Confusion Matrix', conf_mat)
 
 
 
