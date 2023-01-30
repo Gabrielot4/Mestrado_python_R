@@ -65,9 +65,10 @@ y = le.transform(y)
 print('\n \033[1;30;44m Class encoded: \033[m \n ', y)
 
 #Parâmetros a serem testados
-c = np.array([5,3,1,0.1,0.5,1,2,3])  #[0.1,0.5,1,2,3]
+c = np.array([0.1,0.5,1,2,3])  #[0.1,0.5,1,2,3]
 penalty = ['l2']
 loss = ['hinge', 'squared_hinge']  #['hinge', 'squared_hinge']
+#dual = [False] # para quando o númerode amostras é mair que o de atributo
 params_grid = {'C':c, 'loss':loss, 'penalty':penalty}
 
 ## MODEL
